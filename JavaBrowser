@@ -1,0 +1,299 @@
+import java.awt.*;
+import java.awt.List;
+import java.awt.event.*;
+import java.net.*;
+import java.util.*;
+import java.util.Map;
+
+import javax.swing.*;
+import javax.swing.event.*;
+import javax.swing.text.html.*;
+
+
+public class JavaBrowser extends JFrame 
+  {
+		private JButton backButton, forwardButton;
+		private JTextField locationTextField;
+		private JTextField locationTextField2;
+		private JEditorPane displayEditorPane;
+		private JEditorPane displayEditorPane2;
+		private ArrayList pageList = new ArrayList();
+		private JTextArea textarea;
+		private JTextArea textarea2;
+		public JavaBrowser() 
+		{
+			super("Jittapon Jitman s5050238@kmitl.ac.th - Java Web Browser (Network Programming Class Assignment)");
+			setSize(1200, 800);
+			addWindowListener(new WindowAdapter() 
+			{
+				public void windowClosing(WindowEvent e) 
+				{
+					actionExit();
+				}
+			});
+			JMenuBar menuBar = new JMenuBar();
+			JMenu fileMenu = new JMenu("File");
+			fileMenu.setMnemonic(KeyEvent.VK_F);
+			JMenuItem fileExitMenuItem = new JMenuItem("Exit",KeyEvent.VK_X);
+			fileExitMenuItem.addActionListener(new ActionListener() 
+			{
+				public void actionPerformed(ActionEvent e) 
+				{
+					actionExit();
+				}
+			});
+			fileMenu.add(fileExitMenuItem);
+			menuBar.add(fileMenu);
+			setJMenuBar(menuBar);
+			JPanel buttonPanel = new JPanel();
+			/*backButton = new JButton("< Back");
+			backButton.addActionListener(new ActionListener() 
+			{
+				public void actionPerformed(ActionEvent e) 
+				{
+					actionBack();
+				}
+			});
+			backButton.setEnabled(false);
+			buttonPanel.add(backButton);
+			forwardButton = new JButton("Forward >");
+			forwardButton.addActionListener(new ActionListener() 
+			{
+				public void actionPerformed(ActionEvent e) 
+				{
+					actionForward();
+				}
+			});
+			forwardButton.setEnabled(false);
+			buttonPanel.add(forwardButton);*/
+			locationTextField = new JTextField(40);
+			locationTextField2 = new JTextField(40);
+			buttonPanel.add(locationTextField);
+			buttonPanel.add(locationTextField2);
+			JButton goButton = new JButton("GO");
+			displayEditorPane = new JEditorPane();
+			displayEditorPane.setEditable(false);
+			displayEditorPane.setSize(600, 500);
+        
+			displayEditorPane2 = new JEditorPane();
+			displayEditorPane2.setEditable(false);
+			displayEditorPane2.setSize(600, 500);
+			goButton.addActionListener(new ActionListener() 
+			{
+				public void actionPerformed(ActionEvent e) 
+				{
+					//actionGo();
+					ThreadBrowser Thread1 = new ThreadBrowser(backButton,forwardButton,locationTextField,displayEditorPane,pageList,textarea,textarea2,"1");
+					Thread th1 = new Thread(Thread1);
+					th1.start();
+					
+					ThreadBrowser Thread2 = new ThreadBrowser(backButton,forwardButton,locationTextField2,displayEditorPane2,pageList,textarea,textarea2,"2");
+					Thread th2 = new Thread(Thread2);
+					th2.start();
+					
+				}
+			});
+			buttonPanel.add(goButton);
+			
+			getContentPane().setLayout(new BorderLayout());
+			getContentPane().add(buttonPanel, BorderLayout.PAGE_START);
+        	getContentPane().add(new JScrollPane(displayEditorPane),"West");
+        	getContentPane().add(new JScrollPane(displayEditorPane2),"East");
+        	
+        	textarea = new JTextArea(20,30);
+        	textarea.setEditable(false);
+        	
+        	textarea2 = new JTextArea(20,30);
+        	textarea2.setEditable(false);
+        	
+        	buttonPanel.add(new JScrollPane(textarea),BorderLayout.NORTH);
+        	//getContentPane().add(new JScrollPane(textarea2),BorderLayout.SOUTH);
+        	buttonPanel.add(new JScrollPane(textarea2),BorderLayout.SOUTH);
+        	
+		}
+		
+		private void actionExit() 
+		{
+			System.exit(0);
+		}
+	
+		public static void main(String[] args) 
+		{
+			JavaBrowser browser = new JavaBrowser();
+			browser.show();
+		}
+  }
+
+class ThreadBrowser extends JFrame implements Runnable
+{
+	private JButton backButton, forwardButton;
+	private JTextField locationTextField;
+	private JEditorPane displayEditorPane;
+	private ArrayList pageList = new ArrayList();
+	private JTextArea textarea;
+	private JTextArea textarea2;
+	private String name;
+	URL pageUrl;
+	boolean addToList;
+	String errorMassage;
+	
+	public ThreadBrowser(JButton backButton2, JButton forwardButton2,JTextField locationTextField3, 
+		JEditorPane displayEditorPane3,ArrayList pageList2,JTextArea textarea3,JTextArea textarea4,String name2) 
+	{
+		this.backButton = backButton2;
+		this.forwardButton = forwardButton2;
+		this.locationTextField = locationTextField3;
+		this.displayEditorPane = displayEditorPane3;
+		this.pageList = pageList2;
+		this.textarea = textarea3;
+		this.textarea2 = textarea4;
+		this.name = name2; 
+	}
+
+	private void actionBack()
+	{
+		URL currentUrl = displayEditorPane.getPage();
+		int pageIndex = pageList.indexOf(currentUrl.toString());
+		try 
+		{
+			showPage(new URL((String) pageList.get(pageIndex - 1)), false);
+		} 
+		catch (Exception e) {}
+	}
+	
+	private void actionForward() 
+	{
+		URL currentUrl = displayEditorPane.getPage();
+		int pageIndex = pageList.indexOf(currentUrl.toString());
+		try 
+		{
+			showPage(new URL((String) pageList.get(pageIndex + 1)), false);
+		} 
+		catch (Exception e) {}
+	}
+
+	private void actionGo() 
+	{
+		URL verifiedUrl = verifyUrl(locationTextField.getText());
+		textarea.append("Thread #"+name+" create.\n");
+		textarea.append("Thread #"+name+" working. \n");
+		textarea.append("Thread #"+name+" stopped.\n");
+		try 
+		{
+			URL obj = new URL(locationTextField.getText());
+			URLConnection conn = obj.openConnection();
+			Map<String, java.util.List<String>> map = conn.getHeaderFields();
+		 
+			textarea2.append("Printing Response Header...\n");
+		 
+			for (Map.Entry<String, java.util.List<String>> entry : map.entrySet()) 
+			{
+				textarea2.append("Key : " +entry.getKey()+"\n Value : "+entry.getValue());
+			}
+		 
+			textarea2.append("\nGet Response Header By Key ...\n");
+			String server = conn.getHeaderField("Server");
+			if (server == null) 
+			{
+				textarea2.append("Key 'Server' is not found!");
+			} 
+			else 
+			{
+				textarea2.append("Server - " + server);
+			}
+		 
+			textarea2.append("\n Done");
+		} 
+		catch (Exception e) 
+		{
+			e.printStackTrace();
+		}
+		if (verifiedUrl != null)
+		{
+			showPage(verifiedUrl, true);
+		} 
+		else 
+		{
+			showError("Invalid URL");
+		}
+	}
+
+	private void showError(String errorMessage) 
+	{
+		JOptionPane.showMessageDialog(this, errorMessage,"Error", JOptionPane.ERROR_MESSAGE);
+	}
+
+	private URL verifyUrl(String url) 
+	{
+		if (!url.toLowerCase().startsWith("http://"))
+        return null;
+		URL verifiedUrl = null;
+		try 
+		{
+			verifiedUrl = new URL(url);
+		} 
+		catch (Exception e) 
+		{
+			return null;
+		}   
+		return verifiedUrl;
+	}
+
+	private void showPage(URL pageUrl, boolean addToList) 
+	{   
+		setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));     
+		try 
+		{
+			URL currentUrl = displayEditorPane.getPage();
+			displayEditorPane.setPage(pageUrl);
+			URL newUrl = displayEditorPane.getPage();
+			if (addToList)
+			{
+				int listSize = pageList.size();
+				if (listSize > 0) 
+				{
+					int pageIndex = pageList.indexOf(currentUrl.toString());
+					if (pageIndex < listSize - 1) 
+					{
+						for (int i = listSize - 1; i > pageIndex; i--) 
+						{
+							pageList.remove(i);
+						}
+					}
+				}
+				pageList.add(newUrl.toString());
+			}
+			locationTextField.setText(newUrl.toString());
+			updateButtons();
+		} 
+		catch (Exception e) 
+		{
+			showError("Unable to load page");
+		} 
+		finally 
+		{
+			setCursor(Cursor.getDefaultCursor());
+		}
+	}
+	
+	private void updateButtons() 
+	{
+		if (pageList.size() < 2) 
+		{
+			backButton.setEnabled(false);
+			forwardButton.setEnabled(false);
+		} 
+		else 
+		{
+			URL currentUrl = displayEditorPane.getPage();
+			int pageIndex = pageList.indexOf(currentUrl.toString());
+			backButton.setEnabled(pageIndex > 0);
+			forwardButton.setEnabled(pageIndex < (pageList.size() - 1));
+		}
+	}
+
+	@Override
+	public void run() { 
+		actionGo();
+	}
+}
